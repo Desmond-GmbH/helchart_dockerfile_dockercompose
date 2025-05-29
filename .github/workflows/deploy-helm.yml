@@ -39,7 +39,7 @@ jobs:
         run: docker build -t $IMAGE_NAME:$DOCKER_TAG .
 
       - name: Push Docker image
-        run: docker push $IMAGE_NAME:$DOCKER_TAG
+        run: docker push $IMAGE_NAME:$DOCKER_TAG 
 
       - name: Update Helm values (only for development)
         if: github.ref == 'refs/heads/development'
