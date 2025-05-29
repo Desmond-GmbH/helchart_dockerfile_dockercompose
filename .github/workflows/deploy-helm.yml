@@ -3,8 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches: 
-      - development
-      - feature/*
+      - master
 
 env:
   IMAGE_NAME: desmond456/messaging-service
