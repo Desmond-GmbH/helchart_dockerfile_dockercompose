@@ -1,0 +1,58 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - development
+      - feature/*
+
+env:
+  IMAGE_NAME: desmond456/messaging-service
+  BASE_TAG: 1.0.0
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set Docker tag
+        id: set-tag
+        run: |
+          BRANCH_NAME=${GITHUB_REF##*/}
+          TAG=${BASE_TAG}
+
+          if [[ "$BRANCH_NAME" == "development" ]]; then
+            TAG="${BASE_TAG}-rc"
+          elif [[ "$BRANCH_NAME" == feature/* ]]; then
+            CLEAN_BRANCH=$(echo "$BRANCH_NAME" | sed 's/feature\///' | tr '/' '-')
+            TAG="${BASE_TAG}-feature-${CLEAN_BRANCH}"
+          fi
+
+          echo "DOCKER_TAG=$TAG" >> $GITHUB_ENV
+          echo "Docker Tag: $TAG"
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u desmond456 --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:$DOCKER_TAG .
+
+      - name: Push Docker image
+        run: docker push $IMAGE_NAME:$DOCKER_TAG
+
+      - name: Update Helm values (only for development)
+        if: github.ref == 'refs/heads/development'
+        run: |
+          sed -i "s/tag: \".*\"/tag: \"$DOCKER_TAG\"/" messengingapp/values.yaml
+          echo "Updated Helm chart with tag $DOCKER_TAG"
+
+      - name: Commit and push Helm change (only for development)
+        if: github.ref == 'refs/heads/development'
+        run: |
+          git config user.name "Desmond-GmbH"
+          git config user.email "asonglefackd@gmail.com"
+          git add messengingapp/values.yaml
+          git commit -m "Update image tag to $DOCKER_TAG"
+          git push origin development

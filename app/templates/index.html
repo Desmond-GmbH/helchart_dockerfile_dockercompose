@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Email or SMS</title>
+</head>
+<body>
+    <h1>Send Email or SMS</h1>
+    <form id="communicationForm">
+        <label for="type">Type:</label>
+        <select id="typeSelector" name="type" required>
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+        </select>
+        <br><br>
+
+        <div id="emailFields">
+            <label for="emailRecipients">Email Recipients (comma-separated):</label>
+            <input type="text" id="emailRecipients" placeholder="example1@gmail.com, example2@gmail.com" required>
+            <br><br>
+
+            <label for="emailSubject">Subject:</label>
+            <input type="text" id="emailSubject" placeholder="Subject of the email">
+            <br><br>
+
+            <label for="emailMessage">Message:</label>
+            <textarea id="emailMessage" placeholder="Message content" required></textarea>
+        </div>
+
+        <div id="smsFields" style="display: none;">
+            <label for="smsRecipients">SMS Recipients (comma-separated):</label>
+            <input type="text" id="smsRecipients" placeholder="1234567890, 0987654321" required>
+            <br><br>
+
+            <label for="smsMessage">Message:</label>
+            <textarea id="smsMessage" placeholder="Message content" required></textarea>
+        </div>
+
+        <br>
+        <button type="submit">Send</button>
+    </form>
+
+    <div id="response" style="margin-top: 20px; font-weight: bold;"></div>
+
+    <script>
+        const form = document.getElementById('communicationForm');
+        const typeSelector = document.getElementById('typeSelector');
+        const emailFields = document.getElementById('emailFields');
+        const smsFields = document.getElementById('smsFields');
+        const responseDiv = document.getElementById('response');
+
+        // Toggle form fields based on type
+        typeSelector.addEventListener('change', () => {
+            if (typeSelector.value === 'email') {
+                emailFields.style.display = 'block';
+                smsFields.style.display = 'none';
+            } else if (typeSelector.value === 'sms') {
+                emailFields.style.display = 'none';
+                smsFields.style.display = 'block';
+            }
+        });
+
+        // Submit handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            let data = {};
+            let endpoint = '';
+
+            if (typeSelector.value === 'email') {
+                data = {
+                    recipients: document.getElementById('emailRecipients').value.split(',').map(email => email.trim()),
+                    subject: document.getElementById('emailSubject').value,
+                    message: document.getElementById('emailMessage').value,
+                };
+                endpoint = '/email/send-email/';
+            } else if (typeSelector.value === 'sms') {
+                data = {
+                    recipients: document.getElementById('smsRecipients').value.split(',').map(phone => phone.trim()),
+                    message: document.getElementById('smsMessage').value,
+                };
+                endpoint = '/sms/send-sms/';
+            }
+
+            try {
+                const apiResponse = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data),
+                });
+
+                const result = await apiResponse.json();
+
+                if (apiResponse.ok) {
+                    responseDiv.textContent = `Success: ${typeSelector.value.toUpperCase()} sent!`;
+                    responseDiv.style.color = 'green';
+                } else {
+                    responseDiv.textContent = `Error: ${result.detail}`;
+                    responseDiv.style.color = 'red';
+                }
+            } catch (error) {
+                responseDiv.textContent = `An error occurred: ${error.message}`;
+                responseDiv.style.color = 'red';
+            }
+        });
+    </script>
+</body>
+</html>

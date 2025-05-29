@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  messaging-service:
+    image: messaging-service
+    container_name: myapp-container
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.sample
+    restart: always
+    networks:
+      - app-network
+networks:
+  app-network:
+    driver: bridge
+    
